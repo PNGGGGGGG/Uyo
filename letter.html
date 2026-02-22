@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>お手紙</title>
+    <link href="https://fonts.googleapis.com/css2?family=Kaushan+Script&family=Mochiy+Pop+One&display=swap" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f5f5f5;
+            margin: 0;
+            padding: 50px 20px;
+            font-family: sans-serif;
+            color: #333;
+            line-height: 1.8;
+            display: flex;
+            justify-content: center;
+            position: relative;
+        }
+
+        .paper {
+            background-color: #ffffff;
+            width: 100%;
+            max-width: 480px; 
+            padding: 60px 40px;
+            box-shadow: 0 2px 15px rgba(0,0,0,0.05);
+            border-radius: 2px;
+            position: relative; /* 基準点 */
+            z-index: 10;
+            margin-top: 40px;
+            overflow: hidden; /* はみ出した背景画像を隠す */
+        }
+
+        /* テキスト部分のコンテナ（前面） */
+        .text-content {
+            position: relative;
+            z-index: 2; /* 背景画像より手前 */
+        }
+
+        p {
+            font-size: 15px;
+            margin-bottom: 1.5em;
+            text-align: justify;
+            word-wrap: break-word;
+            /* 読みやすさのために文字に少し影をつける（任意） */
+            text-shadow: 0 0 2px rgba(255,255,255,0.8);
+        }
+
+        .signature {
+            margin-top: 60px;
+            text-align: right;
+            font-family: "Yu Mincho", "YuMincho", "Hiragino Mincho ProN", "HGS明朝E", "MS PMincho", "MS 明朝", serif;
+            font-size: 16px;
+            text-shadow: 0 0 2px rgba(255,255,255,0.8);
+        }
+
+        /* 戻るリンクボタン */
+        .back-link {
+            display: block;
+            margin-top: 40px;
+            text-align: center;
+            font-size: 14px;
+            color: #333;
+            text-decoration: none;
+            border: 1px solid #ddd;
+            padding: 10px 20px;
+            border-radius: 20px;
+            width: fit-content;
+            margin-left: auto;
+            margin-right: auto;
+            transition: 0.3s;
+            background-color: rgba(255,255,255,0.8); /* ボタンの背景を半透明の白に */
+        }
+        .back-link:hover {
+            background-color: #333;
+            color: #fff;
+        }
+
+        /* --- 背景画像のスタイル（背面） --- */
+        .bg-images-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1; /* テキストより奥 */
+            pointer-events: none; /* 画像が操作を邪魔しないように */
+        }
+
+        .bg-img {
+            position: absolute;
+            opacity: 0.5; /* 不透明度50% */
+            max-width: 55%; /* 画像のサイズ感 */
+            height: auto;
+            filter: grayscale(30%); /* 少し落ち着いた雰囲気にするフィルター（任意） */
+        }
+
+        /* 奇数番目の画像（左側配置） */
+        .bg-img:nth-child(odd) {
+            left: -8%; /* 少し左にはみ出す */
+            transform: rotate(-5deg); /* 少し傾ける */
+        }
+
+        /* 偶数番目の画像（右側配置） */
+        .bg-img:nth-child(even) {
+            right: -8%; /* 少し右にはみ出す */
+            transform: rotate(5deg); /* 少し傾ける */
+            text-align: right;
+        }
+
+
+        /* --- メニュー関連のスタイル --- */
+        #menu-container {
+            position: absolute; 
+            top: 20px;
+            left: 20px;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+        }
+        .hamburger { width: 35px; height: 25px; display: flex; flex-direction: column; justify-content: space-between; }
+        .hamburger span { display: block; width: 100%; height: 4px; background-color: #333; border-radius: 2px; }
+        .menu-hint { color: rgba(0, 0, 0, 0.4); font-weight: bold; font-size: 16px; user-select: none; font-family: 'Mochiy Pop One', sans-serif; }
+        #sidebar { position: fixed; top: 0; left: -40%; width: 40%; height: 100%; background-color: rgba(255, 255, 255, 0.98); box-shadow: 2px 0 10px rgba(0,0,0,0.1); z-index: 2000; transition: left 0.4s cubic-bezier(0.25, 0.8, 0.25, 1); padding: 20px; box-sizing: border-box; display: flex; flex-direction: column; font-family: 'Mochiy Pop One', sans-serif; }
+        #sidebar.active { left: 0; }
+        .menu-list { list-style: none; padding: 0; margin-top: 50px; }
+        .menu-list li { margin-bottom: 20px; }
+        .menu-list a { text-decoration: none; color: #333; font-size: 18px; display: block; padding: 10px; border-bottom: 1px solid #eee; transition: 0.3s; }
+        .menu-list a:hover { color: #ff69b4; padding-left: 15px; }
+        .close-btn { align-self: flex-end; font-size: 30px; cursor: pointer; color: #333; }
+
+        /* --- ？？？ セクション (音声再生) のスタイル --- */
+        #special-section {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #1a1a1a, #4b0082);
+            z-index: 3000; /* サイドバーよりも手前に表示 */
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            font-family: 'Mochiy Pop One', sans-serif;
+        }
+
+        /* 豪華な再生ボタン */
+        .play-button {
+            width: 120px;
+            height: 120px;
+            background: radial-gradient(circle, #ff69b4, #da1b60);
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            box-shadow: 0 0 20px rgba(255, 105, 180, 0.6), inset 0 0 15px rgba(255,255,255,0.3);
+            transition: transform 0.2s, box-shadow 0.2s;
+            border: 4px solid #fff;
+        }
+        .play-button:hover {
+            transform: scale(1.1);
+            box-shadow: 0 0 40px rgba(255, 105, 180, 0.8);
+        }
+        .play-button:active { transform: scale(0.95); }
+        .play-icon {
+            width: 0; height: 0;
+            border-top: 20px solid transparent;
+            border-bottom: 20px solid transparent;
+            border-left: 35px solid white;
+            margin-left: 10px;
+        }
+
+        /* メッセージアニメーション */
+        #finish-message {
+            margin-top: 40px;
+            font-size: 18px;
+            opacity: 0;
+            text-align: center;
+            transform: translateY(20px);
+            transition: opacity 2s, transform 2s;
+        }
+        #finish-message.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .back-btn-special {
+            margin-top: 40px;
+            font-size: 14px;
+            opacity: 0.7;
+            cursor: pointer;
+            text-decoration: underline;
+        }
+        .back-btn-special:hover {
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="sidebar">
+        <div class="close-btn" onclick="toggleMenu()">×</div>
+        <ul class="menu-list">
+            <li><a href="index.html">グルショ</a></li>
+            <li><a href="#" onclick="toggleMenu(); return false;" style="color: #ff69b4; font-weight:bold;">お手紙</a></li>
+            <li><a href="#" onclick="showSpecial(); return false;">？？？</a></li>
+        </ul>
+    </div>
+
+    <div id="menu-container" onclick="toggleMenu()">
+        <div class="hamburger">
+            <span></span>
+            <span></span>
+            <span></span>
+        </div>
+        <div class="menu-hint">←MENU</div>
+    </div>
+
+    <div id="special-section">
+        <h2 style="margin-bottom:30px; text-shadow: 0 0 10px rgba(255,255,255,0.5);">Secret Audio</h2>
+        <div class="play-button" id="playBtn">
+            <div class="play-icon"></div>
+        </div>
+        <div id="finish-message">【本日は以上ですありがとうございました。byペンギン】</div>
+        <div class="back-btn-special" onclick="showHome()">← お手紙に戻る</div>
+    </div>
+
+    <audio id="secretAudio" src="？？？.m4a" preload="auto"></audio>
+
+    <div class="paper">
+        <div class="bg-images-container">
+            <img src="Uyo (1).png" class="bg-img" style="top: 2%;">
+            <img src="Uyo (2).png" class="bg-img" style="top: 7%;">
+            <img src="Uyo (3).png" class="bg-img" style="top: 13%;">
+            <img src="Uyo (4).png" class="bg-img" style="top: 18%;">
+            <img src="Uyo (5).png" class="bg-img" style="top: 24%;">
+            <img src="Uyo (6).png" class="bg-img" style="top: 29%;">
+            <img src="Uyo (7).png" class="bg-img" style="top: 35%;">
+            <img src="Uyo (8).png" class="bg-img" style="top: 40%;">
+            <img src="Uyo (9).png" class="bg-img" style="top: 46%;">
+            <img src="Uyo (10).png" class="bg-img" style="top: 51%;">
+            <img src="Uyo (11).png" class="bg-img" style="top: 57%;">
+            <img src="Uyo (12).png" class="bg-img" style="top: 62%;">
+            <img src="Uyo (13).png" class="bg-img" style="top: 68%;">
+            <img src="Uyo (14).png" class="bg-img" style="top: 73%;">
+            <img src="Uyo (15).png" class="bg-img" style="top: 79%;">
+            <img src="Uyo (16).png" class="bg-img" style="top: 84%;">
+            <img src="Uyo (17).png" class="bg-img" style="top: 90%;">
+            <img src="Uyo (18).png" class="bg-img" style="top: 95%;">
+        </div>
+
+        <div class="text-content">
+            <p>
+                昨日、私は拳銃を拾った。あるいは、盗んだのかもしれないが、私にはよくわからない。<br><br>
+                そんな、中村文則の「銃」の冒頭は置いといて。<br><br>
+                うよ太郎へ⊂(ᴖ ̫ᴖ)⊃<br>
+                うよ太郎誕生日おめでとう.ᐟ.ᐟ🎉🎂✨( ᐛ👐)<br>
+                17歳もいい一年にしようね(´ω｀)ﾉ
+            </p>
+            <p>
+                この怪文書(？)では全てを語ります()そう、全て。まず、私とうよ太郎が出会った頃から。元々北海道のスイカゲームの上手いイケボさんの枠で存在はお互いに知っていたけど、私が初めて枠に行ったのは多分一昨年のクリスマスイブぐらいかな？( '꒳' )その時のイベントはシマエナガでポケポケの配信でした。初めて行った配信にも関わらず、見たことある！！とか知ってる！！とか言ってくれて、凄い歓迎してくれてまた来たいなって思えたよ.ᐟ.ᐟჱ̒˶ｰ̀֊ｰ́ )
+            </p>
+            <p>
+                そして去年になるのですが( '꒳' )去年ミラティブで最も見た配信者はおそらく多分絶対うよ太郎であると思います。そして去年で最も仲良くなれた配信者、これもまたうよ太郎だと思います。そしてそして、私が去年ミラティブを続けられた理由、それもうよ太郎だと思っています。実際、ミラティブで誰かと揉めたとか、アカウントが消えたからとかとかではなく、単純になんか辞めたいな～ってなった時も何度かありましたが。でもやっぱ続けたいな～って思えるのは行きたい枠、これからを見届けたい枠、その選択肢にはいつもうよ太郎が居ました。私がミラティブを離れている時も、何とかミラティブを開かせようとしてきたり(？)話すついでに初見歓迎のモデをやらされました(？)そのままの成り行きで現在はミラティブに戻っていますが、それもうよ太郎のおかげ(せい)です。(話戻し)
+            </p>
+            <p>
+                去年の4月のスタダムでは1番長く枠に居た自信があります( *´･ᴗ･)/ﾄﾞﾄﾞﾝ♪結果は惜しくも2位だったけど、うよ太郎と枠のみんなで盛り上がれて凄く良い1日だったね.ᐟ.ᐟまたランキング走る時があったら1番に見守りたいな.ᐟ.ᐟ𐐃ω𐐃また筋トレしてね()
+            </p>
+            <p>
+                そしてそしてそして、去年の8月のペンギンルーレットは一緒に集められてよかったよd(˙꒳​˙* )お互い欲しいのが相手に出てて睨み合ってたね(？)|壁|дｰ́ )ｶﾞﾙﾙｯ!それもまたいい思い出です。そしてそしてそしてそして、私のアカウントが消えた時は全力で罵って頂き大変ありがとうございます。次消したら年齢を出さないといけないらしいのでBANされたほうのミラティブは消します()
+            </p>
+            <p>
+                そしてここからが本題。うよ太郎は現在、進路関係の事で悩んでいる様子が伺えます。そこで自論領域展開したいと思います。まず前提として、私はうよ太郎の家族のことは微塵も知りません。うよ太郎目線でしか話を聞いたことはないし( '꒳' )親の年齢とか周りにはどういう人が居てとかそんなのは知りません。1つの出来事でも目線が違えば全く別の事として捉えられます。言われた側は傷つく一言でも、別の視点で見れば、まずその言葉自体を悪い意味と思っていなかったり。理不尽に怒られたと思っていたら、別の視点で見てみれば、意外とちゃんとした理由があったりします。
+            </p>
+            <p>
+                行きたい進路を否定されることの要因は私の中で2つあります。1つ目はより良い人生を送ってもらう為に、と言うこと。【基本的】に親は子供の幸せを願っていて、自分より子供が大切だと思っています。子育ての最終目標の多くは自立させることですが、その時により一層幸せになるためには何が必要でしょうか。お金が沢山あるから幸せ、仕事が楽しいから幸せ、愛する人がいるから幸せ、など人によって選択肢は異なります。そのため、親の思う幸せがお金があることや学歴がいい事なのであれば、軽く言えば子供の幸せを願っての行動とも捉えられます。
+            </p>
+            <p>
+                2つ目は、子供を自身の評価だと思ってるパターンです。やはり子育てという物、周りの目を気にしてしまう人もいます。子供の学歴、成長過程、悪事、善行、成功、失敗等は周りからよく見られることがあります。事実、育ちの悪い子供の原因は環境もありますが多くは親の教育によるものだと思っています。周りからの評価を上げるには、親として保護者としての株を上げる為には、子供という財産の価値を上げたいですよね。悪く言うのであれば、子供をある種道具として見ている人はこの考え方になる人もいます。
+            </p>
+            <p>
+                そして、この2つの考え方に共通するのがエゴです。自身の考えを押し付ける行為です。自身にコンプレックスがあったり、自身が優れていて自分に厳しい人などは、人に考えを押し付けてしまう傾向があります。自身の理想像を子供に求む傾向があります。自分が達成出来なかった目標を押し付けてしまう傾向があります。その多くは自分の為、子供の為と言っていても元を辿れば自身のエゴに過ぎません。
+            </p>
+            <p>
+                子供の行きたい進路が納得行かない時もあるとは思います。例えば、中退してフリーターになるとか、あまり安定しない職業を目指し一攫千金を狙う事があると思います。しかし、短大に行って、教育者という公務員になるのはむしろ安定した肯定されるべき選択であると私は思います。しかし、否定されている事実がここにあります。それは結局は親のエゴであり独りよがりに何ら変わりありません。はなからうよ太郎の親を否定する気はありませんが。こう言う視点から考えると、親が悪いように納得できてしまいます。どの視点から見ても親が悪くのであれば、まずこの様な事はしないと思うので、少なからず親が悪くならない、正義に近しいと言う考え方も1つはあるのでしょう。
+            </p>
+            <p>
+                私から見て、この問題を解決する方法はないと思います。まず、親との価値観が違います。考え方が違います。視点が違います。生きてる長さ、経験が違います。親は教育者であり、保護者ですが子の方針を示す事はあまりないです。あくまでも選ぶのは子供本人で、親はそのサポートをするべきであると言うのが一般的である。子供が矩を超えようとした時に道を戻してあげる、良いこと、やりたい事で真っ直ぐ育ててあげるのが親です。
+            </p>
+            <p>
+                状況を打破する方法がないのであれば、考え方を変える以外に抜け出す方法はありません。こちら側が頑張って考え方を寄せるでもいいし、向こう側を本気で説得してこちらに寄せるでも構いません。しかし、自分が正しいと思っている時、人は成長が止まります。話を聞いて貰えないのであれば、そういう人間です。子供の大事な人生の選択の時に、優先するのは学歴かやりたい事、どちらでしょうか。ですが、私なら絶対子どもの意見最優先にするわ！！とか思っていても、果たして本当にそう出来るでしょうか？
+            </p>
+            <p>
+                事実私には子供なんて居ませんし、誰かを育てた経験も進路を聞く経験もありません。そのような時、私が一親の意見として、子供を最優先に考えられるでしょうか、心のどこかでは、私ようになって欲しくないから、いい大学に行って良い職について欲しい。と思うかも知れませんし、周りの目を気にしてしまう可能性だって有り得ます。あくまでも、私ならこうする！！は机上の空論に過ぎないので、実際に想像通りに行えるとははなから思っていませんが、それもまた分からない事です。
+            </p>
+            <p>
+                話がしれましたが、そんな中でもうよ太郎には自分のやりたい事を優先して欲しいと思っています。学費を出して貰えないかもしれない、親に更に反対されるかもしれない、等の不安はあるとは思います。自身の考えた結果の進路を否定され、特段行きたくも無いとこを強要されるのは、精神的にも来るものがあると思う。ですが、そこで折れて行きたくない所を受験したと仮定した時、あなたは幸せになれるでしょうか？(学費は払われる•親からの反発もない•学歴に繋がり、就活で少し有利になる)
+            </p>
+            <p>
+                あなたが行きたい所に行った方が幸せになれるでしょうか？(学費を払って貰えない可能性がある•やりたい事なので頑張れる•将来就きたかった職につける)私はやりたい事、やりたくない事を分別する時にこう考えます。進路を考えてる人に向かってあまりこう言う言葉を言うのは良くないですが。私は受験が失敗した時を考えます。その時、本気で悔しいとか、悔いが残るのであればばのであればそれを目標だと思います。しかし、失敗した時に特段何も思わない、「その」学校に落ちたことよりも、受験という一括りの物に落ちたと言う意識が強い。あの学校が第一志望なら受かったのにな、とか落ちたことよりも平行世界を考えてしまう。そんな時、私はそれを後悔だと考えます。
+            </p>
+            <p>
+                私は落ちるなら全力で行きたい所に突撃して落ちるぐらいの勢いです。0.1%でも受かる確率があるなら、私はやりたい事を優先したいです。あなたはどうですか？きっと0.1%なんかよりはずっと確率は高いはずです。目標に向かって努力出来る人なのは分かっています。押し付けがましいですが、私は心から行きたい所に行って欲しいです。あなたはどんな場所でも頑張れるよ！なんて言葉も言った方がいいですが、私はそうは思いません。人は、夢や目標と言う目的地に歩く時、必ずルートが決まっています。しかし、途中で道を逸らされた時、夢や目標への道が分からなくなり、どこか分からない所まで行ってしまうことだって考えられます。ましてや、その先にあるのが光か闇かなんて誰にも分かりません。
+            </p>
+            <p>
+                人生と言う長い道のりのなか、この様な大きな選択をするのは次の就活や採用試験です。そこに繋がる、且つ自身が本気でここで死んでもいいって思えるほど全力を出せる場所に行って欲しいです。辛かったら話を聞いてくれる人も居るし、私も聞くし。周りが全員否定的なわけでもないので、そういう所を心の拠り所して、これからも配信者として、受験生として全力で進んでいつまて欲しいと思います。
+            </p>
+            <p>
+                辛いこと、泣きたい事、やめてしまいたいこと、沢山あると思いますが。自分の芯を持って、それを大切に守り抜いて、自分の夢を手にしてください。誰かに相談してもいいし、配信で弱い所を見せてもいいので、自分自身と戦ってください。そして、これからも私の大好きなうよ太郎でいてください( '꒳' )👌
+            </p>
+            <p>
+                以上で怪文書を終わります。長旅お疲れ様でした。それでは〜おつうよ〜☂️🎧
+            </p>
+
+            <div class="signature">あなたのペットPNGより。</div>
+            
+            <a href="index.html" class="back-link">TOPへ戻る</a>
+        </div>
+    </div>
+
+    <script>
+        const sidebar = document.getElementById('sidebar');
+        const specialSection = document.getElementById('special-section');
+        const finishMsg = document.getElementById('finish-message');
+        const secretAudio = document.getElementById('secretAudio');
+        const playBtn = document.getElementById('playBtn');
+
+        // メニューの開閉
+        function toggleMenu() {
+            sidebar.classList.toggle('active');
+        }
+
+        // ？？？画面を表示する
+        function showSpecial() {
+            sidebar.classList.remove('active');
+            specialSection.style.display = 'flex';
+        }
+
+        // お手紙画面に戻る
+        function showHome() {
+            specialSection.style.display = 'none';
+        }
+
+        // Secret Audio 再生処理
+        playBtn.addEventListener('click', () => {
+            finishMsg.classList.remove('show');
+            secretAudio.currentTime = 0;
+            secretAudio.play();
+        });
+
+        // 音声終了後のメッセージアニメーション
+        secretAudio.onended = () => {
+            finishMsg.classList.add('show');
+            setTimeout(() => {
+                finishMsg.classList.remove('show');
+            }, 4000);
+        };
+    </script>
+
+</body>
+</html>
+
